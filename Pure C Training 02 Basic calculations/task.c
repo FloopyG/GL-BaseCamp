@@ -17,9 +17,9 @@ void equation2 (float rad)
   printf("\nEquation 2 result: %f", result);
 }
 
-float randNumInRange (double range)
+float randNumInRange (int range)
 {
-  return (float)(((double)rand()/(double)(RAND_MAX)) * range * 2) - (float)range;
+  return (float)(((double)rand()/(double)(RAND_MAX)) * (double)range * 2) - (float)range;
 }
 
 int main()

@@ -37,7 +37,7 @@ void yellow ()
   Algorithm is only looking for any available path, not the shortest one.
 
 */
-int findPath (int maze[HEIGHT][WIDTH], int current_X, int current_Y, int exit_X, int exit_Y, direction dir) 
+int findPath (int current_X, int current_Y, int exit_X, int exit_Y, direction dir) 
 {
   // Checking if current point is our destination
   if (current_X == exit_X && current_Y == exit_Y) 
@@ -57,28 +57,28 @@ int findPath (int maze[HEIGHT][WIDTH], int current_X, int current_Y, int exit_X,
   // If all possible available coordinates were checked returns 0.
   // When we arrive at our destination we change the path values to 2, using backtracking.
   if (maze[current_Y][current_X - 1] == 0 && dir != LEFT) {
-    if (findPath(maze, current_X - 1, current_Y, exit_X, exit_Y, RIGHT) == 1)
+    if (findPath(current_X - 1, current_Y, exit_X, exit_Y, RIGHT) == 1)
     {
       maze[current_Y][current_X - 1] = 2;
       return 1;
     }
   }
   if (maze[current_Y][current_X + 1] == 0 && dir != RIGHT) {
-    if (findPath(maze, current_X + 1, current_Y, exit_X, exit_Y, LEFT) == 1)
+    if (findPath(current_X + 1, current_Y, exit_X, exit_Y, LEFT) == 1)
     {
       maze[current_Y][current_X + 1] = 2;
       return 1;
     }
   }
   if (maze[current_Y + 1][current_X] == 0 && dir != BOTTOM) {
-    if (findPath(maze, current_X, current_Y + 1, exit_X, exit_Y, TOP) == 1)
+    if (findPath(current_X, current_Y + 1, exit_X, exit_Y, TOP) == 1)
     {
       maze[current_Y + 1][current_X] = 2;
       return 1;
     }
   }
   if (maze[current_Y - 1][current_X] == 0 && dir != TOP) {
-    if (findPath(maze, current_X, current_Y - 1, exit_X, exit_Y, BOTTOM) == 1)
+    if (findPath(current_X, current_Y - 1, exit_X, exit_Y, BOTTOM) == 1)
     {
       maze[current_Y - 1][current_X] = 2;
       return 1;
@@ -93,7 +93,7 @@ int findPath (int maze[HEIGHT][WIDTH], int current_X, int current_Y, int exit_X,
 int main()
 {
 
-  findPath(maze, 0, 26, 48, 39, TOP);
+  findPath(0, 26, 48, 39, TOP);
 
   
   for (int i = 0; i < HEIGHT; i++)

@@ -1,0 +1,13 @@
+.settings/
+Debug/
+Drivers/
+Middlewares/
+USB_HOST/
+.cproject
+.mxproject
+.project
+GL_HW_*_Debug.launch
+GL_HW_*.ioc
+STM32F407VGTX_FLASH
+STM32F407VGTX_FLASH.ld
+STM32F407VGTX_RAM.ld

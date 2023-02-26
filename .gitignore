@@ -6,8 +6,6 @@ Workshop-Tasks/**/USB_HOST/
 Workshop-Tasks/**/.cproject
 Workshop-Tasks/**/.mxproject
 Workshop-Tasks/**/.project
-Workshop-Tasks/**/GL_HW_* Debug.launch
-Workshop-Tasks/**/GL_HW_*.ioc
 Workshop-Tasks/**/STM32F407VGTX_FLASH
 Workshop-Tasks/**/STM32F407VGTX_FLASH.ld
 Workshop-Tasks/**/STM32F407VGTX_RAM.ld

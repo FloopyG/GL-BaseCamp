@@ -6,7 +6,9 @@ Workshop-Tasks/**/USB_HOST/
 Workshop-Tasks/**/.cproject
 Workshop-Tasks/**/.mxproject
 Workshop-Tasks/**/.project
+
 Workshop-Tasks/**/STM32F407VGTX_FLASH
 Workshop-Tasks/**/STM32F407VGTX_FLASH.ld
 Workshop-Tasks/**/STM32F407VGTX_RAM.ld
-Workshop-Tasks/Bare-Metal-Training-01-Hello-World/
+
+

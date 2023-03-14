@@ -459,7 +459,6 @@ void Check_For_Emergencies(void)
 void Modify_All_Common_PWM_CH(void)
 {
 	Stop_All_PWM_CH();
-	MX_TIM4_Init();
 	Start_All_PWM_CH();
 
 	// Setting intensity for LED which is controlled by Potentiometer. Checking for emergency

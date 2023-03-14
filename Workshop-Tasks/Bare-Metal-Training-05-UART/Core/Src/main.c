@@ -108,6 +108,7 @@ int main(void)
   uint32_t currentTick = 0;
   uint32_t previousTick = 0;
   uint8_t buff[6] = {0};
+  float externalTemp = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -119,8 +120,8 @@ int main(void)
 	  if (currentTick - previousTick >= 5000)
 	  {
 		 HAL_ADC_Start_IT(&hadc1);
-		 sprintf(buff, "%d", adcExternalTempResult);
-		 buff[4] = '\n';
+		 externalTemp = ((float) adcExternalTempResult / (float) 4095 * 3) * (-50) + 101;
+		 sprintf(buff, "%.2f", externalTemp);
 		 HAL_UART_Transmit_IT(&huart3, buff, sizeof(buff));
 		 previousTick = currentTick;
 	  }

@@ -26,6 +26,15 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 pca9685_handle handle;
+
+typedef enum pca9685_commandFlags
+{
+  NO_FLAG = 0,
+  FREQUNECY,
+  DUTY,
+  SLEEP_ON,
+  SLEEP_OFF
+} pca9685_flags;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -46,10 +55,14 @@ UART_HandleTypeDef huart3;
 uint8_t UART3_rxBuffer[UART3_RX_BUFFER_SIZE] = {0};
 uint8_t UART3_currentIndex = 0;
 
-uint8_t doneCommandStr[26] = " - executed successfully!\n";
-uint8_t wrongCommandStr[16] = "Invalid command\n";
+uint8_t doneCommandStr[31] = "Command executed successfully!\n";
+uint8_t wrongCommandStr[41] = "Problem occurred while executing command\n";
 
-uint32_t test = 0;
+bool isCommandEntered = false;
+pca9685_flags currentFlag = NO_FLAG;
+
+uint32_t PCA9685_command_value = 0;
+uint16_t PCA9685_command_channel = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,7 +71,7 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void handleCommand (uint8_t* command);
+void handleCommandFlag (uint8_t* command);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,22 +123,75 @@ int main(void)
   HAL_UART_Receive_IT(&huart3, (uint8_t*)UART3_rxBuffer, 1);
 
   PCA9685_setDutyCycle(&handle, 30, 0);
-  uint32_t tick = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  tick = HAL_GetTick();
-	  if (tick == 5000)
+	  /*
+	   * Added flag-cheking system outside handleCommandFlag function, because inside of it
+	   * I2C modules refused to work properly
+	   */
+	  if (isCommandEntered)
 	  {
-		  PCA9685_setDutyCycle(&handle, 75, 0);
-	  }
-	  if (test)
-	  {
-		  handleCommand(UART3_rxBuffer);
-		  test = 0;
+		  handleCommandFlag(UART3_rxBuffer);
+		  isCommandEntered = false;
+	      switch (currentFlag)
+	      {
+	        case FREQUNECY:
+				if (PCA9685_setFrequency(&handle, (float) PCA9685_command_value) == true)
+				{
+					HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
+				}
+				else
+				{
+					HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
+				}
+				currentFlag = NO_FLAG;
+	        	break;
+
+	        case DUTY:
+				if (PCA9685_setDutyCycle(&handle, PCA9685_command_value, PCA9685_command_channel) == true)
+				{
+					HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
+				}
+				else
+				{
+					HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
+				}
+				currentFlag = NO_FLAG;
+	        	break;
+
+	        case SLEEP_ON:
+				if (PCA9685_sleep(&handle) == true)
+				{
+					HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
+				}
+				else
+				{
+					HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
+				}
+				currentFlag = NO_FLAG;
+	        	break;
+
+	        case SLEEP_OFF:
+				if (PCA9685_wakeUp(&handle) == true)
+				{
+					HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
+				}
+				else
+				{
+					HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
+				}
+				currentFlag = NO_FLAG;
+	        	break;
+
+	        default:
+	        	currentFlag = NO_FLAG;
+	        	break;
+	      }
+
 	      UART3_currentIndex = 0;
 	  }
     /* USER CODE END WHILE */
@@ -274,12 +340,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void handleCommand (uint8_t* command)
+void handleCommandFlag (uint8_t* command)
 {
 	char* parts[4];
 	uint8_t part_index = 0;
 	parts[part_index] = strtok((char*) command, " ");
-	while (parts[part_index] != NULL && part_index < 4)
+	while (parts[part_index] != NULL && part_index < 3)
 	{
 	  parts[++part_index] = strtok(NULL, " ");
 	}
@@ -288,30 +354,14 @@ void handleCommand (uint8_t* command)
 	{
 		if (strcmp(parts[1], "freq") == 0)
 		{
-			uint8_t value = atoi(parts[2]);
-			if (PCA9685_setFrequency(&handle, (float) value) == true)
-			{
-				HAL_UART_Transmit(&huart3, command, sizeof(command), 100);
-				HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
-			}
-			else
-			{
-				HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
-			}
+			currentFlag = FREQUNECY;
+			PCA9685_command_value = atoi(parts[2]);
 		}
 		else if (strcmp(parts[1], "duty") == 0)
 		{
-			uint8_t channel = atoi(parts[2]);
-			uint8_t value = atoi(parts[3]);
-			if (PCA9685_setDutyCycle(&handle, value, channel) == true)
-			{
-				HAL_UART_Transmit(&huart3, command, sizeof(command), 100);
-				HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
-			}
-			else
-			{
-				HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
-			}
+			currentFlag = DUTY;
+			PCA9685_command_channel = atoi(parts[2]);
+			PCA9685_command_value = atoi(parts[3]);
 		}
 		else
 		{
@@ -322,28 +372,12 @@ void handleCommand (uint8_t* command)
 	{
 		if (strcmp(parts[1], "on") == 0)
 		{
-			if (PCA9685_sleep(&handle) == true)
-			{
-				HAL_UART_Transmit(&huart3, command, sizeof(command), 100);
-				HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
-			}
-			else
-			{
-				HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
-			}
+			currentFlag = SLEEP_ON;
 
 		}
 		else if (strcmp(parts[1], "off") == 0)
 		{
-			if (PCA9685_wakeUp(&handle) == true)
-			{
-				HAL_UART_Transmit(&huart3, command, sizeof(command), 100);
-				HAL_UART_Transmit(&huart3, doneCommandStr, sizeof(doneCommandStr), 100);
-			}
-			else
-			{
-				HAL_UART_Transmit(&huart3, wrongCommandStr, sizeof(wrongCommandStr), 100);
-			}
+			currentFlag = SLEEP_OFF;
 		}
 		else
 		{
@@ -365,7 +399,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     {
       // End of command received
     	UART3_rxBuffer[UART3_currentIndex] = '\0';
-    	test = 1;
+    	isCommandEntered = true;
     }
     else
     {

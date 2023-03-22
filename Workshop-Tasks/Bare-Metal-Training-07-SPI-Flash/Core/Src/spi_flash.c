@@ -7,18 +7,16 @@
 
 #include "spi_flash.h"
 
-void flashSelect(void)
+static void flashSelect(void)
 {
 	HAL_GPIO_WritePin(GPIOD, FLASH_SS_PIN, GPIO_PIN_RESET);
-	HAL_Delay(100);
 }
-void flashDeselect(void)
+static void flashDeselect(void)
 {
 	HAL_GPIO_WritePin(GPIOD, FLASH_SS_PIN, GPIO_PIN_SET);
-	HAL_Delay(100);
 }
 
-void flashWriteEnable(void)
+static void flashWriteEnable(void)
 {
 	flashSelect();
 
@@ -28,7 +26,7 @@ void flashWriteEnable(void)
 	flashDeselect();
 }
 
-void flashWriteDisable(void)
+static void flashWriteDisable(void)
 {
 	flashSelect();
 
@@ -38,25 +36,51 @@ void flashWriteDisable(void)
 	flashDeselect();
 }
 
+void editWRSR(uint8_t *data)
+{
+
+	flashSelect();
+
+	uint8_t addr = ENABLE_WRITE_STATUS_REGISTER;
+	HAL_SPI_Transmit(&hspi1, &addr, sizeof(addr), HAL_MAX_DELAY);
+
+	flashDeselect();
+
+	flashWriteEnable();
+	flashSelect();
+
+	addr = WRITE_STATUS_REGISTER;
+	HAL_SPI_Transmit(&hspi1, &addr, sizeof(addr), HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi1, data, 1, HAL_MAX_DELAY);
+
+	flashDeselect();
+	flashWriteDisable();
+}
+
 void flashRead(uint32_t address, uint8_t *data, uint16_t size)
 {
 	flashSelect();
 
 	uint8_t addr[4] = {FLASH_READ, (uint8_t) (address >> 16), (uint8_t) (address >> 8), (uint8_t) address};
-	HAL_SPI_TransmitReceive(&hspi1, addr, data, sizeof(addr) + size, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi1, addr, sizeof(addr), HAL_MAX_DELAY);
+	HAL_SPI_Receive(&hspi1, data, size, HAL_MAX_DELAY);
 
 	flashDeselect();
 }
 
 void flashWrite(uint32_t address, uint8_t *data, uint16_t size)
 {
-	flashWriteEnable();
-	flashSelect();
+	for (int i = 0; i < size; ++i)
+	{
+		flashWriteEnable();
+		flashSelect();
+		uint8_t byte = data[i];
+		uint8_t addr[4] = {FLASH_WRITE, (uint8_t) (address >> 16), (uint8_t) (address >> 8), (uint8_t) address};
+		HAL_SPI_Transmit(&hspi1, addr, sizeof(addr), HAL_MAX_DELAY);
+		HAL_SPI_Transmit(&hspi1, &byte, 1, HAL_MAX_DELAY);
+		flashDeselect();
+		address += 1;
+	}
 
-	uint8_t addr[4] = {FLASH_WRITE, (uint8_t) (address >> 16), (uint8_t) (address >> 8), (uint8_t) address};
-	HAL_SPI_Transmit(&hspi1, addr, sizeof(addr), HAL_MAX_DELAY);
-	HAL_SPI_Transmit(&hspi1, data, size, HAL_MAX_DELAY);
-	HAL_Delay(2000);
-	flashDeselect();
 	flashWriteDisable();
 }

@@ -18,12 +18,14 @@
 #define FLASH_READ 0x03
 #define FLASH_WRITE 0x02
 
+#define ENABLE_WRITE_STATUS_REGISTER 0x50
+#define WRITE_STATUS_REGISTER 0x01
+
+#define WRSR_NO_BLOCK_PROTECTION 0x00
+
 extern SPI_HandleTypeDef hspi1;
 
-void flashSelect(void);
-void flashDeselect(void);
-void flashWriteEnable(void);
-void flashWriteDisable(void);
+void editWRSR(uint8_t *data);
 void flashRead(uint32_t address, uint8_t *data, uint16_t size);
 void flashWrite(uint32_t address, uint8_t *data, uint16_t size);
 
